@@ -2,7 +2,7 @@ import java.util.Scanner;
 
 class Main {
     static void main() {
-        TaskRepo repository = new TaskRepo("Tasks.csv");
+//        task repo to be rewriten
 
         TaskService taskService = new TaskService(repository);
 
