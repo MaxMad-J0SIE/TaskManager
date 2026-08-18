@@ -6,12 +6,13 @@ public class TaskService {
 //    error/exception handling
 //    TODO when creating a task check if the date is in the past (exception)
 
-    private final TaskRepo repository;
+    private final String repository;
     private final List<Task> tasks;
 
-    public TaskService(TaskRepo repository) {
+    public TaskService(String repository) {
         this.repository = repository;
-        this.tasks = repository.ReadCSV();
+        this.tasks = repository.ReadDB();
+//        wtf did i do here
     }
 
 }

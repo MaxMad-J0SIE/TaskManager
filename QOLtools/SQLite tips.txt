@@ -1,0 +1,219 @@
+SQLITE TIPS (using SQLite from Java via JDBC)
+================================================
+
+SETUP
+-----
+Maven dependency (pom.xml):
+    <dependency>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
+        <version>3.45.1.0</version>
+    </dependency>
+
+Connecting to a database file (creates the file if it doesn't exist yet):
+    import java.sql.Connection;
+    import java.sql.DriverManager;
+    import java.sql.SQLException;
+
+    Connection conn = DriverManager.getConnection("jdbc:sqlite:data/tasks.db");
+
+Note: since sqlite-jdbc 3.x you don't need Class.forName(...) anymore,
+the driver auto-registers. Always close the connection when done:
+    conn.close();
+or better, use try-with-resources (see below).
+
+
+CORE JDBC OBJECTS
+--------------------
+Connection   -> the open link to the .db file
+Statement    -> runs plain SQL with no parameters (risk of SQL injection if you
+                concatenate user input into the string - avoid this)
+PreparedStatement -> runs parameterized SQL safely with "?" placeholders (USE THIS
+                whenever a value comes from user input or a variable)
+ResultSet    -> the rows returned by a SELECT query
+
+
+CREATING A TABLE
+-------------------
+String sql = """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            due_date TEXT,
+            status TEXT NOT NULL,
+            priority TEXT NOT NULL
+        )
+        """;
+
+try (Connection conn = Database.connect();
+     Statement stmt = conn.createStatement()) {
+    stmt.execute(sql);
+}
+
+(Watch the SQL keyword: it's "IF NOT EXISTS", not "IF NOT EXIST" - a missing
+S there will throw a syntax error at runtime.)
+
+
+INSERTING DATA (use PreparedStatement, not string concatenation)
+---------------------------------------------------------------------
+String sql = "INSERT INTO tasks (title, description, due_date, status, priority) VALUES (?, ?, ?, ?, ?)";
+
+try (Connection conn = Database.connect();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.setString(1, title);
+    ps.setString(2, description);
+    ps.setString(3, dueDate);
+    ps.setString(4, status);
+    ps.setString(5, priority);
+    ps.executeUpdate();
+}
+
+Getting the auto-generated ID back after an insert:
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        ps.executeUpdate();
+        try (ResultSet keys = ps.getGeneratedKeys()) {
+            if (keys.next()) {
+                int newId = keys.getInt(1);
+            }
+        }
+    }
+
+
+READING DATA (SELECT)
+-------------------------
+String sql = "SELECT id, title, status FROM tasks WHERE status = ?";
+
+try (Connection conn = Database.connect();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.setString(1, "pending");
+    try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String title = rs.getString("title");
+            String status = rs.getString("status");
+            System.out.println(id + ": " + title + " (" + status + ")");
+        }
+    }
+}
+
+ResultSet getters: getInt(col), getString(col), getDouble(col), getBoolean(col),
+getLong(col), getDate(col) — you can reference columns by name (rs.getString("title"))
+or by 1-based index (rs.getString(1)).
+
+
+UPDATING DATA
+----------------
+String sql = "UPDATE tasks SET status = ? WHERE id = ?";
+
+try (Connection conn = Database.connect();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.setString(1, "done");
+    ps.setInt(2, taskId);
+    int rowsAffected = ps.executeUpdate();
+}
+
+
+DELETING DATA
+----------------
+String sql = "DELETE FROM tasks WHERE id = ?";
+
+try (Connection conn = Database.connect();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.setInt(1, taskId);
+    ps.executeUpdate();
+}
+
+
+executeQuery() vs executeUpdate() vs execute()
+--------------------------------------------------
+executeQuery()  -> for SELECT statements, returns a ResultSet
+executeUpdate() -> for INSERT/UPDATE/DELETE/CREATE TABLE, returns int (rows affected)
+execute()       -> generic, use when you don't know ahead of time / for DDL like
+                    CREATE TABLE; returns boolean (true if a ResultSet was produced)
+
+
+TRY-WITH-RESOURCES (always prefer this over manual close())
+----------------------------------------------------------------
+Connection, Statement, PreparedStatement, and ResultSet all implement
+AutoCloseable, so wrap them in try(...) and they'll close automatically
+even if an exception is thrown:
+
+    try (Connection conn = Database.connect();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        // use ps
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+
+COMMON PRAGMAS (SQLite-specific settings, run like any other statement)
+-----------------------------------------------------------------------------
+PRAGMA foreign_keys = ON;      -- enforce FOREIGN KEY constraints (off by default!)
+PRAGMA journal_mode = WAL;     -- better concurrent read/write performance
+PRAGMA table_info(tasks);      -- list columns of a table (useful for debugging)
+
+Run these once right after opening a connection, e.g.:
+    stmt.execute("PRAGMA foreign_keys = ON;");
+
+
+TRANSACTIONS (batch several changes, all-or-nothing)
+---------------------------------------------------------
+conn.setAutoCommit(false);
+try {
+    // multiple ps.executeUpdate() calls here
+    conn.commit();
+} catch (SQLException e) {
+    conn.rollback();
+} finally {
+    conn.setAutoCommit(true);
+}
+
+
+USEFUL SQL SNIPPETS
+-----------------------
+-- list all tables in the db
+SELECT name FROM sqlite_master WHERE type='table';
+
+-- count rows
+SELECT COUNT(*) FROM tasks;
+
+-- order results
+SELECT * FROM tasks ORDER BY due_date ASC;
+
+-- filter + sort combined
+SELECT * FROM tasks WHERE status = 'pending' ORDER BY priority DESC;
+
+-- basic join example (if you add a categories table later)
+SELECT t.title, c.name FROM tasks t JOIN categories c ON t.category_id = c.id;
+
+
+COMMON GOTCHAS
+-----------------
+- SQLite has dynamic typing (TEXT/INTEGER/REAL/BLOB are "affinities", not strict
+  types) - it's lenient about what you insert, so validate in Java if you need
+  strict types.
+- Never build SQL by string-concatenating user input (SQL injection risk) -
+  always use PreparedStatement with "?" placeholders.
+- AUTOINCREMENT keyword is technically discouraged by SQLite docs for normal use;
+  plain INTEGER PRIMARY KEY already auto-increments (rowid alias) - only use
+  AUTOINCREMENT if you specifically need to guarantee IDs are never reused.
+- The database file's parent folder (e.g. "data/") must already exist -
+  SQLite will create the .db file itself but not missing directories.
+- Booleans aren't a native SQLite type - they're usually stored as INTEGER
+  0/1.
+
+
+QUICK REFERENCE TABLE
+-------------------------
+Method/Class          | Purpose
+-----------------------|--------------------------------------------------
+DriverManager.getConnection(url) | open/create a connection to the db file
+Statement               | run plain (non-parameterized) SQL
+PreparedStatement       | run parameterized SQL safely (use for anything with variables)
+ResultSet               | iterate over rows from a SELECT
+executeQuery()          | run a SELECT, get a ResultSet back
+executeUpdate()         | run INSERT/UPDATE/DELETE, get affected row count
+execute()               | generic execution (e.g. CREATE TABLE)
+rs.next()               | move to next row, false when no rows left
+conn.setAutoCommit(false) + commit()/rollback() | transactions

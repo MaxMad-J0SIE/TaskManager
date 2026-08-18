@@ -1,0 +1,8 @@
+TODO - there is a huge shitshow in data handling (NEEDS TO BE FIXED ASAP)
+TODO - task: TaskRepo should hold the SQLite Connection (constructor takes Connection, not a dbConn string) instead of the old CSV-string approach
+TODO - task: rewrite TaskRepo.ReadDB() as an instance method that runs a SQL query and maps the ResultSet into List<Task>, not a static method returning String
+TODO - task: rewrite TaskRepo.SaveUpdateDB() to actually execute SQL against the Connection
+TODO - task: revert TaskService's constructor/field back to TaskRepo (not String) so it holds a repo instance it can call repeatedly for reads/writes, not just once at startup
+TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(conn)) and pass that TaskRepo object into TaskService, instead of calling TaskRepo.ReadDB() as a static call into a String
+TODO - task: fix Database.java SQL typo - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS"
+TODO - task: use PreparedStatement with ? placeholders (not Statement/string concatenation) for any future TaskRepo queries built from task data, to avoid SQL injection

@@ -1,8 +1,14 @@
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Scanner;
+import java.util.List;
 
 class Main {
-    static void main() {
-//        task repo to be rewriten
+    static void main() throws SQLException {
+        Connection conn = Database.connect();
+        Database.Create_DB(conn);
+
+        String repository = TaskRepo.ReadDB();
 
         TaskService taskService = new TaskService(repository);
 

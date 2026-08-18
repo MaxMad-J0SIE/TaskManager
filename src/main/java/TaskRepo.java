@@ -6,20 +6,20 @@ public class TaskRepo {
 //    reads once when opening the app and puts in into object instances
 //    save every time new task is added
 
-    private final String filePath;
+    private final String dbConn;
 
-    public TaskRepo(String filePath) {
-        this.filePath = filePath;
+    public TaskRepo(String dbConn) {
+        this.dbConn = dbConn;
     }
 
-    public List<Task> ReadCSV() {
+    public static String ReadDB() {
 //        reading the file and convert it into list of objects (List<Task>)
-        List<Task> tasks = new ArrayList<Task>();
+        String tasks = "";
         return tasks;
     }
 
-    public void SaveCSV(List<Task> tasks) {
-//        takes the list of objects (List<Task>) and parses it into the csv
+    public static void SaveUpdateDB(List<Task> tasks) {
+//        updated the whole db no matter how much data was updated - foolproof method
     }
     
 }

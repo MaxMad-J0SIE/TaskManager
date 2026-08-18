@@ -1,0 +1,219 @@
+MAVEN TIPS - a friendlier introduction
+==========================================
+
+Think of Maven as your project's project manager. You tell it *what* you need
+(dependencies, Java version, plugins) in one file, and it figures out the
+*how* - downloading libraries, compiling, testing, packaging - so you never
+have to hand-manage a folder full of .jar files again.
+
+That one file is called pom.xml, and it lives at the root of your project.
+POM stands for "Project Object Model" - basically a recipe card that
+describes your project to Maven.
+
+Yours is right here: TaskManager/pom.xml. We'll use it as the example
+throughout, so open it side by side with this file if you can.
+
+
+THE ANATOMY OF YOUR pom.xml
+-------------------------------
+    <groupId>com.j0sie</groupId>
+    <artifactId>TaskManager</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+This trio is your project's "name tag" - together it's called the GAV
+coordinate (Group, Artifact, Version). Every library you depend on has one
+too, which is how Maven finds the exact jar it needs.
+
+    groupId    -> who made it (usually reversed domain, like a namespace).
+                  Yours is com.j0sie - basically "you" as a package author.
+    artifactId -> the project's actual name. Yours is TaskManager.
+    version    -> which version. "1.0-SNAPSHOT" means "still in development,
+                  this number isn't final yet." Once you tag a real release
+                  you'd bump it to something like "1.0" (no SNAPSHOT).
+
+Fun fact: this is exactly the same pattern as your sqlite-jdbc dependency:
+    <groupId>org.xerial</groupId>
+    <artifactId>sqlite-jdbc</artifactId>
+    <version>3.46.1.3</version>
+"org.xerial made a project called sqlite-jdbc, and I want version 3.46.1.3
+of it." Same idea, just describing someone else's project instead of yours.
+
+
+DEPENDENCIES - THE WHOLE POINT OF MAVEN
+--------------------------------------------
+Before Maven, using a library meant manually downloading a .jar, plus all
+*its* dependencies, plus all of *theirs* ("dependency hell"). Maven ends
+that: you declare what you want, it fetches everything transitively.
+
+Your project currently depends on two things:
+
+    <dependencies>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.46.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.9</version>
+        </dependency>
+    </dependencies>
+
+sqlite-jdbc lets your Java code talk to a .db file (see "Database.java").
+opencsv lets you read/write CSV files (see the old TaskRepo.java attempt).
+
+Where do these jars actually come from? Maven Central - a giant public
+repository of open-source libraries. First time you build, Maven downloads
+them into a local cache on your machine: ~/.m2/repository. Every build
+after that reuses the cache instead of re-downloading - fast.
+
+Adding a new dependency is a 3-step treasure hunt:
+    1. Search https://mvnrepository.com for the library you want.
+    2. Copy the <dependency> block it gives you.
+    3. Paste it inside your <dependencies> block, save, and reload the
+       project (IntelliJ: the little "m" refresh icon, or right-click
+       pom.xml -> Maven -> Reload project).
+
+
+THE properties BLOCK
+------------------------
+    <properties>
+        <maven.compiler.source>26</maven.compiler.source>
+        <maven.compiler.target>26</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+This is where you set project-wide knobs.
+    maven.compiler.source/target -> which Java language version your code
+        is written in / compiled for. Yours is set to 26 (very cutting
+        edge - make sure that's actually intentional, most projects target
+        an LTS version like 17 or 21 unless you specifically need preview
+        features).
+    project.build.sourceEncoding -> forces UTF-8 everywhere so special
+        characters don't get mangled differently on different machines/OSes.
+        Good habit to always set this.
+
+
+THE MAVEN LIFECYCLE - THE "STAGES OF A BUILD"
+---------------------------------------------------
+Maven builds run through a pipeline of *phases*, each doing more than the
+last. Run a phase and every phase before it runs too. Think of it like a
+video game with sequential levels - you can't reach level 5 without
+clearing 1 through 4.
+
+    validate  -> sanity-check the project is structured correctly
+    compile   -> turn your .java files into .class files
+    test      -> run your unit tests
+    package   -> bundle compiled code into a .jar (or .war)
+    verify    -> run any checks on that packaged result
+    install   -> copy the .jar into your LOCAL ~/.m2 cache (so other local
+                 projects on your machine can depend on it)
+    deploy    -> upload the .jar to a REMOTE shared repository (for
+                 publishing a library for others/CI to use)
+
+You run these from a terminal in the project folder:
+    mvn compile     -> just compile
+    mvn test        -> compile + run tests
+    mvn package     -> compile + test + bundle into target/TaskManager-1.0-SNAPSHOT.jar
+    mvn install     -> all of the above + install to local repo
+    mvn clean       -> wipes the target/ folder (start fresh)
+
+Common combo: mvn clean install - wipe old build output, then rebuild
+everything from scratch. Great for "why isn't this working, let me nuke
+and rebuild" moments.
+
+
+WHERE THE OUTPUT GOES: target/
+-----------------------------------
+Every time you build, Maven writes its output to a target/ folder (yours
+has one already). This includes compiled .class files and, after
+`package`, the final runnable .jar. This folder is 100% disposable -
+`mvn clean` deletes it, and it should always be in your .gitignore (never
+commit build output).
+
+
+RUNNING YOUR APP WITH MAVEN
+---------------------------------
+Plain Maven doesn't have a built-in "just run my app" phase - that's what
+the exec-maven-plugin is for. If you want `mvn exec:java` to work, add
+this to a new <build><plugins> section in your pom.xml:
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <mainClass>Main</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+Then: mvn exec:java
+(In practice, IntelliJ's "Run" button does this for you without any
+plugin - it compiles and runs directly. The plugin mainly matters for
+running from a bare terminal or in CI.)
+
+
+PLUGINS - HOW MAVEN LEARNS NEW TRICKS
+------------------------------------------
+Maven's core doesn't know how to compile Java, run tests, or build a jar -
+plugins do that work, and Maven just orchestrates *when* they run (which
+phase they're bound to). The compiler and jar plugins run silently under
+the hood even though your pom.xml doesn't mention them - Maven has
+sensible defaults built in. You only add a <plugins> entry when you want
+non-default behavior, like:
+    maven-shade-plugin / maven-assembly-plugin -> bundle all your
+        dependencies INTO one big runnable "fat jar" (useful since
+        sqlite-jdbc and opencsv otherwise have to be on the classpath
+        separately when you run your jar elsewhere).
+    maven-surefire-plugin -> controls how `mvn test` runs your tests.
+
+
+DEPENDENCY SCOPE (a detail worth knowing)
+-----------------------------------------------
+You can add <scope>...</scope> inside a <dependency> to control *when*
+it's available:
+    compile  (default) -> needed everywhere: compiling, testing, running.
+                           This is what you're using now (no scope tag
+                           means compile).
+    test               -> only available during `mvn test`, e.g. JUnit.
+                           Keeps test-only libraries out of your final jar.
+    provided           -> needed to compile, but assumed to already exist
+                           at runtime (e.g. servlet APIs on an app server).
+
+Example - if you add JUnit later for tests, it should look like this:
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.10.2</version>
+        <scope>test</scope>
+    </dependency>
+
+
+THE MENTAL MODEL, IN ONE SENTENCE
+--------------------------------------
+pom.xml describes WHAT your project is and needs; Maven's lifecycle
+phases describe WHEN things happen (compile, test, package...); plugins
+are HOW each phase actually gets done. Once that clicks, every other
+Maven quirk you run into is just a variation on this same shape.
+
+
+QUICK REFERENCE TABLE
+-------------------------
+Command/Tag             | Purpose
+-------------------------|--------------------------------------------------
+mvn compile              | compile source code
+mvn test                 | compile + run tests
+mvn package               | build a runnable .jar into target/
+mvn install               | package + install to local ~/.m2 cache
+mvn clean                 | delete the target/ build folder
+mvn clean install         | full fresh rebuild, most common "just do it" combo
+<dependencies>            | libraries your project needs
+<groupId>/<artifactId>/<version> | the GAV coordinate identifying a project/library
+<properties>               | project-wide config (Java version, encoding, etc.)
+<build><plugins>           | extra tools/behavior bolted onto the build
+<scope>test</scope>        | dependency only needed for running tests

@@ -1,0 +1,143 @@
+SCANNER TIPS (java.util.Scanner)
+=================================
+
+SETUP
+-----
+import java.util.Scanner;
+
+Scanner sc = new Scanner(System.in);   // reads from keyboard/console
+Scanner sc = new Scanner(new File("data.txt")); // reads from a file (throws FileNotFoundException)
+Scanner sc = new Scanner("some string"); // reads from a String directly
+
+Always close it when you're done (not required for System.in in a small console app,
+but good habit for files):
+    sc.close();
+
+
+READING INPUT
+--------------
+sc.nextLine()      -> reads a full line of text as a String (stops at \n)
+sc.next()          -> reads a single "token" (stops at whitespace, not just newline)
+sc.nextInt()       -> reads the next token as an int
+sc.nextLong()      -> reads the next token as a long
+sc.nextDouble()    -> reads the next token as a double
+sc.nextBoolean()   -> reads "true"/"false" as a boolean
+
+Example:
+    System.out.print("Enter your name: ");
+    String name = sc.nextLine();
+
+    System.out.print("Enter your age: ");
+    int age = sc.nextInt();
+
+
+CHECKING BEFORE YOU READ (avoids exceptions/crashes)
+-----------------------------------------------------
+sc.hasNext()        -> true if there's another token waiting
+sc.hasNextLine()     -> true if there's another line waiting
+sc.hasNextInt()      -> true if the next token can be parsed as an int
+sc.hasNextDouble()   -> true if the next token can be parsed as a double
+
+Example - validate input instead of crashing on bad data:
+    System.out.print("Enter a number: ");
+    while (!sc.hasNextInt()) {
+        System.out.println("That's not a number, try again.");
+        sc.next(); // discard the bad token
+    }
+    int number = sc.nextInt();
+
+
+THE #1 GOTCHA: MIXING nextInt()/next() WITH nextLine()
+--------------------------------------------------------
+nextInt(), nextDouble(), next(), etc. do NOT consume the trailing newline
+character after the number/token. If you call nextLine() right after,
+it will immediately return an empty string instead of waiting for input.
+
+Bad:
+    int age = sc.nextInt();
+    String name = sc.nextLine();   // <-- returns "" immediately, doesn't wait!
+
+Fix - consume the leftover newline first:
+    int age = sc.nextInt();
+    sc.nextLine();                 // eat the leftover newline
+    String name = sc.nextLine();   // now works as expected
+
+Alternative fix - read everything as a line and parse it yourself:
+    int age = Integer.parseInt(sc.nextLine().trim());
+
+
+READING UNTIL THE END (files or piped input)
+-----------------------------------------------
+while (sc.hasNextLine()) {
+    String line = sc.nextLine();
+    // process line
+}
+
+// or token by token
+while (sc.hasNext()) {
+    String token = sc.next();
+}
+
+
+SPLITTING A LINE YOURSELF (common with CSV-like input)
+---------------------------------------------------------
+String line = sc.nextLine();
+String[] parts = line.split(",");        // split on comma
+String[] parts = line.split("\\s+");     // split on any whitespace
+
+CHANGING THE DELIMITER
+------------------------
+By default Scanner splits tokens on whitespace. You can change that:
+    sc.useDelimiter(",");     // now next()/hasNext() split on commas instead
+    sc.useDelimiter("\\s*,\\s*"); // comma with optional surrounding spaces
+
+
+COMMON PATTERN: SIMPLE MENU LOOP
+------------------------------------
+Scanner sc = new Scanner(System.in);
+boolean running = true;
+while (running) {
+    System.out.println("1) Add  2) List  3) Quit");
+    String choice = sc.nextLine().trim();
+    switch (choice) {
+        case "1": /* ... */ break;
+        case "2": /* ... */ break;
+        case "3": running = false; break;
+        default: System.out.println("Unknown option");
+    }
+}
+
+
+EXCEPTIONS TO KNOW
+---------------------
+InputMismatchException  -> thrown when you call nextInt()/nextDouble()/etc.
+                            but the next token isn't that type (e.g. user typed
+                            "abc" for nextInt()). Guard with hasNextInt() first,
+                            or catch it.
+NoSuchElementException  -> thrown when you try to read but there's no more
+                            input left (e.g. end of file reached).
+
+Try/catch example:
+    try {
+        int n = sc.nextInt();
+    } catch (InputMismatchException e) {
+        System.out.println("Please enter a valid number.");
+        sc.next(); // clear the bad token so you don't loop forever
+    }
+
+
+QUICK REFERENCE TABLE
+-------------------------
+Method            | Purpose
+------------------|--------------------------------------------------
+nextLine()        | whole line as String
+next()            | single whitespace-delimited token as String
+nextInt()         | token as int
+nextLong()        | token as long
+nextDouble()      | token as double
+nextBoolean()     | token as boolean
+hasNext()         | is there another token?
+hasNextLine()     | is there another line?
+hasNextInt()      | is next token a valid int?
+close()           | release resources (important for file/String scanners)
+useDelimiter(...) | change what separates tokens
