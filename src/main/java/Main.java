@@ -8,9 +8,10 @@ class Main {
         Connection conn = Database.connect();
         Database.Create_DB(conn);
 
-        String repository = TaskRepo.ReadDB();
+        TaskRepo repository = new TaskRepo(conn);
+        List<Task> taskList = repository.ReadDB();
 
-        TaskService taskService = new TaskService(repository);
+//        TaskService taskService = new TaskService(repository);
 
         Scanner scanner = new Scanner(System.in);
         ConsoleUI cli = new ConsoleUI(taskService, scanner);

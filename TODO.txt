@@ -7,10 +7,10 @@ TODO - urgent: data handling is a mess and needs a full rewrite.
 === DATABASE (Database.java / TaskRepo.java) ===
 Group note: importance - high, nothing else in the app can work correctly until this is fixed. Complexity - medium, requires some comfort with JDBC/SQL, but the pieces are small and can be done one at a time.
 
-TODO - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
+DONE - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
     Note: there's a small spelling mistake in the database setup command that could stop the app from creating its table correctly.
 
-TODO - task: make TaskRepo hold the SQLite Connection (constructor takes a Connection, not a dbConn string) instead of the old CSV-string approach.
+DONE - task: make TaskRepo hold the SQLite Connection (constructor takes a Connection, not a dbConn string) instead of the old CSV-string approach.
     Note: the part of the app responsible for talking to the database should be handed a real, open database connection to work with, instead of just a piece of text.
 
 TODO - task: rewrite TaskRepo.ReadDB() as an instance method that runs a SQL query and maps the ResultSet into a List<Task>, instead of a static method returning a String.
@@ -30,3 +30,6 @@ TODO - task: revert TaskService's constructor/field back to TaskRepo (not String
 
 TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
     Note: when the app starts up, it should set up the database connection and pass it through to the rest of the app the proper way, instead of using the old broken shortcut.
+
+TODO - think about whether due_date should really be NOT NULL or nullable.
+    Note to self: made due_date NOT NULL so every task requires a deadline, matching Task's own validation - but not 100% sure yet if I actually want to force every task to have a due date. Revisit this later and decide for real; if nullable is wanted after all, need to relax Task's validation and null-check the parse in ReadDB().
