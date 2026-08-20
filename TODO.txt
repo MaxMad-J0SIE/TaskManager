@@ -1,5 +1,14 @@
+=== GENERAL ===
+Group note: importance - high, this is the root problem blocking real usage of the app. Complexity - varies, this is really just an umbrella for the two groups below, so its own effort is low, but it won't be "done" until both other groups are.
+
 TODO - urgent: data handling is a mess and needs a full rewrite.
     Note: the way the app reads and saves tasks doesn't actually work yet and needs to be redone properly using the database, instead of relying on placeholder code.
+
+=== DATABASE (Database.java / TaskRepo.java) ===
+Group note: importance - high, nothing else in the app can work correctly until this is fixed. Complexity - medium, requires some comfort with JDBC/SQL, but the pieces are small and can be done one at a time.
+
+TODO - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
+    Note: there's a small spelling mistake in the database setup command that could stop the app from creating its table correctly.
 
 TODO - task: make TaskRepo hold the SQLite Connection (constructor takes a Connection, not a dbConn string) instead of the old CSV-string approach.
     Note: the part of the app responsible for talking to the database should be handed a real, open database connection to work with, instead of just a piece of text.
@@ -10,14 +19,14 @@ TODO - task: rewrite TaskRepo.ReadDB() as an instance method that runs a SQL que
 TODO - task: rewrite TaskRepo.SaveUpdateDB() to actually execute SQL against the Connection.
     Note: saving currently does nothing at all - it needs to actually write the task data into the database so changes aren't lost.
 
+TODO - task: use PreparedStatement with ? placeholders (not Statement/string concatenation) for any future TaskRepo queries built from task data, to avoid SQL injection.
+    Note: any database commands built from task data should be written in a safe way so that user input can't be used to tamper with or damage the database.
+
+=== APP WIRING (TaskService.java / Main.java) ===
+Group note: importance - medium-high, the app won't start correctly without this, but it's a downstream consequence of the database group rather than a separate problem. Complexity - low, mostly mechanical changes to what gets passed into what once the database group is done.
+
 TODO - task: revert TaskService's constructor/field back to TaskRepo (not String), so it holds a repo instance it can call repeatedly for reads/writes instead of only once at startup.
     Note: the part of the app that manages tasks should keep hold of the database-handling component so it can read and save data whenever it needs to, not just once when the app first starts.
 
 TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
     Note: when the app starts up, it should set up the database connection and pass it through to the rest of the app the proper way, instead of using the old broken shortcut.
-
-TODO - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
-    Note: there's a small spelling mistake in the database setup command that could stop the app from creating its table correctly.
-
-TODO - task: use PreparedStatement with ? placeholders (not Statement/string concatenation) for any future TaskRepo queries built from task data, to avoid SQL injection.
-    Note: any database commands built from task data should be written in a safe way so that user input can't be used to tamper with or damage the database.
