@@ -28,7 +28,7 @@ Group note: importance - medium-high, the app won't start correctly without this
 7. TODO - task: revert TaskService's constructor/field back to TaskRepo (not String), so it holds a repo instance it can call repeatedly for reads/writes instead of only once at startup.
     Note: the part of the app that manages tasks should keep hold of the database-handling component so it can read and save data whenever it needs to, not just once when the app first starts.
 
-8. TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
+8. TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(Conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
     Note: when the app starts up, it should set up the database connection and pass it through to the rest of the app the proper way, instead of using the old broken shortcut.
 
 9. TODO - think about whether due_date should really be NOT NULL or nullable.

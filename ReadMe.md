@@ -1,10 +1,10 @@
 Project Name: Task manager
 
-Task manager project used to organize someone's work. Uses json to save tasks which are accessed by the User through a
+Task manager project used to organize someone's work. Uses SQLite Database to save tasks which are accessed by the User through a
 console UI with commands.
 
 1. Tasks spec: id, title, description, dueDate(localDate), status(TODO, IN_PROGRESS, DONE), priority(LOW, MEDIUM, HIGH)
-2. Tasks saved in json/mySQL Lite (tasks.json / mySQL Lite)
+2. Tasks saved in mySQL Lite
 3. Validation & Custom Exceptions (no crashes - errors to logs)
 4. Clean layered architecture (different classes do different things):
     - 1st layer - Task object creation and handling (getting and setting) - Task.java

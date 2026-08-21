@@ -39,6 +39,7 @@ public class TaskRepo {
     }
 
     public void SaveUpdateDB(List<Task> tasks) throws SQLException {
+//        tasks will be in when method is initialised
 //        updated the whole db no matter how much data was updated - foolproof method
         String sqlDelete = "DELETE FROM tasks";
         String sqlInsert = "INSERT INTO tasks(id, title, description, due_date, status, priority) VALUES(?, ?, ?, ?, ?, ?)";
