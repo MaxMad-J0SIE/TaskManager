@@ -38,8 +38,37 @@ public class TaskRepo {
         return tasks;
     }
 
-    public static void SaveUpdateDB(List<Task> tasks) {
+    public void SaveUpdateDB(List<Task> tasks) throws SQLException {
 //        updated the whole db no matter how much data was updated - foolproof method
+        String sqlDelete = "DELETE FROM tasks";
+        String sqlInsert = "INSERT INTO tasks(id, title, description, due_date, status, priority) VALUES(?, ?, ?, ?, ?, ?)";
+
+        try {
+            dbConn.setAutoCommit(false);
+            try (PreparedStatement deleteStmt = dbConn.prepareStatement(sqlDelete)) {
+                deleteStmt.executeUpdate();
+            }
+
+            try (PreparedStatement insertStmt = dbConn.prepareStatement(sqlInsert)) {
+                for (Task task : tasks) {
+                    insertStmt.setInt(1, task.getId());
+                    insertStmt.setString(2, task.getTitle());
+                    insertStmt.setString(3, task.getDescription());
+                    insertStmt.setString(4, task.getDueDate().toString());
+                    insertStmt.setString(5, task.getStatus().name());
+                    insertStmt.setString(6, task.getPriority().name());
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
+            }
+
+            dbConn.commit();
+        } catch (SQLException e) {
+            dbConn.rollback();
+            throw e;
+        } finally {
+            dbConn.setAutoCommit(true);
+        }
     }
     
 }
