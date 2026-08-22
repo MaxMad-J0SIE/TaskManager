@@ -5,11 +5,11 @@ import java.sql.Statement;
 
 public class Database {
     static String sql = """
-            CREATE TABLE IF NOT EXIST tasks (
+            CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 description TEXT,
-                due_date TEXT,
+                due_date TEXT NOT NULL,
                 status TEXT NOT NULL,
                 priority TEXT NOT NULL
             )

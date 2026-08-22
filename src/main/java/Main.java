@@ -1,14 +1,13 @@
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Scanner;
-import java.util.List;
 
 class Main {
     static void main() throws SQLException {
         Connection conn = Database.connect();
         Database.Create_DB(conn);
 
-        String repository = TaskRepo.ReadDB();
+        TaskRepo repository = new TaskRepo(conn);
 
         TaskService taskService = new TaskService(repository);
 

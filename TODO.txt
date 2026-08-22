@@ -1,32 +1,50 @@
 === GENERAL ===
 Group note: importance - high, this is the root problem blocking real usage of the app. Complexity - varies, this is really just an umbrella for the two groups below, so its own effort is low, but it won't be "done" until both other groups are.
 
-TODO - urgent: data handling is a mess and needs a full rewrite.
+1. TODO - urgent: data handling is a mess and needs a full rewrite.
     Note: the way the app reads and saves tasks doesn't actually work yet and needs to be redone properly using the database, instead of relying on placeholder code.
 
 === DATABASE (Database.java / TaskRepo.java) ===
 Group note: importance - high, nothing else in the app can work correctly until this is fixed. Complexity - medium, requires some comfort with JDBC/SQL, but the pieces are small and can be done one at a time.
 
-TODO - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
+2. DONE - task: fix the SQL typo in Database.java - "CREATE TABLE IF NOT EXIST" should be "CREATE TABLE IF NOT EXISTS".
     Note: there's a small spelling mistake in the database setup command that could stop the app from creating its table correctly.
 
-TODO - task: make TaskRepo hold the SQLite Connection (constructor takes a Connection, not a dbConn string) instead of the old CSV-string approach.
+3. DONE - task: make TaskRepo hold the SQLite Connection (constructor takes a Connection, not a dbConn string) instead of the old CSV-string approach.
     Note: the part of the app responsible for talking to the database should be handed a real, open database connection to work with, instead of just a piece of text.
 
-TODO - task: rewrite TaskRepo.ReadDB() as an instance method that runs a SQL query and maps the ResultSet into a List<Task>, instead of a static method returning a String.
+4. DONE - task: rewrite TaskRepo.ReadDB() as an instance method that runs a SQL query and maps the ResultSet into a List<Task>, instead of a static method returning a String.
     Note: loading tasks should actually query the database and turn the results into a usable list of task objects, instead of just handing back empty text.
 
-TODO - task: rewrite TaskRepo.SaveUpdateDB() to actually execute SQL against the Connection.
+5. DONE - task: rewrite TaskRepo.SaveUpdateDB() to actually execute SQL against the Connection.
     Note: saving currently does nothing at all - it needs to actually write the task data into the database so changes aren't lost.
 
-TODO - task: use PreparedStatement with ? placeholders (not Statement/string concatenation) for any future TaskRepo queries built from task data, to avoid SQL injection.
+6. DONE - task: use PreparedStatement with ? placeholders (not Statement/string concatenation) for any future TaskRepo queries built from task data, to avoid SQL injection.
     Note: any database commands built from task data should be written in a safe way so that user input can't be used to tamper with or damage the database.
 
 === APP WIRING (TaskService.java / Main.java) ===
 Group note: importance - medium-high, the app won't start correctly without this, but it's a downstream consequence of the database group rather than a separate problem. Complexity - low, mostly mechanical changes to what gets passed into what once the database group is done.
 
-TODO - task: revert TaskService's constructor/field back to TaskRepo (not String), so it holds a repo instance it can call repeatedly for reads/writes instead of only once at startup.
+7. DONE - task: revert TaskService's constructor/field back to TaskRepo (not String), so it holds a repo instance it can call repeatedly for reads/writes instead of only once at startup.
     Note: the part of the app that manages tasks should keep hold of the database-handling component so it can read and save data whenever it needs to, not just once when the app first starts.
 
-TODO - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
+8. DONE - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(Conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
     Note: when the app starts up, it should set up the database connection and pass it through to the rest of the app the proper way, instead of using the old broken shortcut.
+
+9. TODO - think about whether due_date should really be NOT NULL or nullable.
+    Note to self: made due_date NOT NULL so every task requires a deadline, matching Task's own validation - but not 100% sure yet if I actually want to force every task to have a due date. Revisit this later and decide for real; if nullable is wanted after all, need to relax Task's validation and null-check the parse in ReadDB().
+
+=== TASK HANDLING (TaskService.java) ===
+Group note: importance - high, this is the actual task-management logic the rest of the app is built to support. Complexity - medium, four operations to flesh out, each needs its own validation/error handling on top of TaskRepo calls.
+
+10. TODO - task: implement TaskService's Create, Update, Select, and Delete methods for tasks, replacing the current empty CreateTask/TaskSearch stubs.
+    Note: TaskService is meant to be the app's brain for task manipulation, but right now it has no real logic - it needs methods to create a new task, update an existing task's fields, select/find a task (e.g. by id), and delete a task, each validating input and calling into TaskRepo to persist the change.
+
+=== CONSOLE UI (ConsoleUI.java) ===
+Group note: importance - medium, the app is unusable as a real tool without it, but it doesn't block the database/service work above. Complexity - low-medium, mostly input parsing and routing to existing TaskService methods.
+
+11. TODO - task: replace ScanSystemIn's raw int-reading loop with a real command parser (e.g. "add", "list", "done <id>", "exit").
+    Note: the console currently only reads integers in a loop and prints them back; it should instead recognize named commands from the user and call the right TaskService method.
+
+12. TODO - task: for update/delete commands, have ConsoleUI first let the user search tasks (by title, status, etc.) and show the matches with their ids, then prompt for the id to act on, instead of asking the user to type an id blind.
+    Note: TaskService's update/delete methods should stay id-based for an unambiguous target, but the console shouldn't force the user to already know a task's id - it should search/list first so the user can see and confirm which task they're about to change or delete.
