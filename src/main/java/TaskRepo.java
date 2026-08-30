@@ -1,7 +1,4 @@
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
@@ -39,10 +36,10 @@ public class TaskRepo {
     }
 
     public void SaveUpdateDB(List<Task> tasks) throws SQLException {
-//        tasks will be in when method is initialised
+//        tasks will be in when method is initialized
 //        updated the whole db no matter how much data was updated - foolproof method
-        String sqlDelete = "DELETE FROM tasks";
-        String sqlInsert = "INSERT INTO tasks(id, title, description, due_date, status, priority) VALUES(?, ?, ?, ?, ?, ?)";
+        String sqlDelete = "DELETE FROM tasks;";
+        String sqlInsert = "INSERT INTO tasks(id, title, description, due_date, status, priority) VALUES(?, ?, ?, ?, ?, ?);";
 
         try {
             dbConn.setAutoCommit(false);
@@ -69,6 +66,34 @@ public class TaskRepo {
             throw e;
         } finally {
             dbConn.setAutoCommit(true);
+        }
+    }
+
+    public Integer NewTaskSaveDB(String title, String description, LocalDate dueDate, Status status, Priority priority) throws SQLException {
+        String sqlInsert = "INSERT INTO tasks(title, description, due_date, status, priority) VALUES(?, ?, ?, ?, ?);";
+
+        try (PreparedStatement insertStmt = dbConn.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS)) {
+            insertStmt.setString(1, title);
+            insertStmt.setString(2, description);
+            insertStmt.setString(3, dueDate.toString());
+            insertStmt.setString(4, status.name());
+            insertStmt.setString(5, priority.name());
+            insertStmt.executeUpdate();
+            try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+        }
+        throw new SQLException("Insert failed, no id generated for task: " + title);
+    }
+
+    public void DeleteTaskDB(Integer id) throws SQLException {
+        String sqlDelete = "DELETE FROM tasks WHERE id = ?";
+
+        try (PreparedStatement deleteStmt = dbConn.prepareStatement(sqlDelete)) {
+            deleteStmt.setInt(1, id);
+            deleteStmt.execute();
         }
     }
     

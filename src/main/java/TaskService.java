@@ -19,8 +19,16 @@ public class TaskService {
     }
 
 //    Task Create
-    public void CreateTask() {
-
+    public void CreateTask(String title, String description, String dueDate, String priority ) throws SQLException {
+//        create a task without id and pass it to DB
+//        get id from db
+        LocalDate dueDate1 = LocalDate.parse(dueDate);
+        Status status = Status.TODO;
+        Priority priority1 = Priority.valueOf(priority);
+        Integer id = repository.NewTaskSaveDB(title, description, dueDate1, status, priority1);
+        Task task = new Task(id, title, dueDate1, priority1);
+        task.setDescription(description);
+        tasks.add(task);
     }
 
 //    Search methods (id - Task, title - List, keyword(desc) - List, duedate(exact/overdue) - List, status - List, priority - List)
@@ -60,29 +68,36 @@ public class TaskService {
     }
 
 //    Task Delete
-    public void DeleteTask() {
-
+    public void DeleteTask(Integer id) throws SQLException {
+        Task task = SearchById(id);
+        repository.DeleteTaskDB(id);
+        tasks.remove(task);
     }
 
 //    Task Update
-    public void UpdateTitle() {
-
+    public void UpdateTitle(Integer id, String newTitle) {
+        Task task = SearchById(id);
+        task.setTitle(newTitle);
     }
 
-    public void UpdateDescription() {
-
+    public void UpdateDescription(Integer id, String newDescription) {
+        Task task = SearchById(id);
+        task.setDescription(newDescription);
     }
 
-    public void UpdateDeadline() {
-
+    public void UpdateDeadline(Integer id, LocalDate newDeadline) {
+        Task task = SearchById(id);
+        task.setDueDate(newDeadline);
     }
 
-    public void UpdateStatus() {
-
+    public void UpdateStatus(Integer id, Status newStatus) {
+        Task task = SearchById(id);
+        task.setStatus(newStatus);
     }
 
-    public void UpdatePriority() {
-
+    public void UpdatePriority(Integer id, Priority newPriority) {
+        Task task = SearchById(id);
+        task.setPriority(newPriority);
     }
 
 

@@ -1,9 +1,10 @@
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Scanner;
 
 class Main {
-    static void main() throws SQLException {
+    static void main() throws SQLException, IOException {
         Connection conn = Database.connect();
         Database.Create_DB(conn);
 

@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Scanner;
 
 public class ConsoleUI {
@@ -10,12 +11,31 @@ public class ConsoleUI {
         this.scanner = scanner;
     }
 
-    public void ScanSystemIn() {
+    public void ScanSystemIn() throws IOException {
 //        works
 //        TODO make it into a command console controls
-        while(scanner.hasNextInt()) {
-            int scannedText = scanner.nextInt();
-            System.out.println(scannedText);
+        StartTerminal();
+        System.out.println("--help to list commands");
+        while(scanner.hasNext()) {
+
+        }
+    }
+
+    public void StartTerminal() throws IOException {
+//        Uncomment the one needed (maybe will be automatic in the future)
+//        Windows
+        new ProcessBuilder("cmd.exe", "/c", "cmd.exe").start();
+
+//        Mac
+//        new ProcessBuilder("open", "-a", "Terminal").start();
+
+//        Linux
+//        new ProcessBuilder("gnome-terminal").start();
+    }
+
+    public void CommandHandler(String command) {
+        if (command.contains("--help")) {
+            System.out.println("Command List:");
         }
     }
 }

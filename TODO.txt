@@ -31,13 +31,14 @@ Group note: importance - medium-high, the app won't start correctly without this
 8. DONE - task: update Main.java to construct TaskRepo with the Connection (new TaskRepo(Conn)) and pass that TaskRepo instance into TaskService, instead of calling TaskRepo.ReadDB() as a static call returning a String.
     Note: when the app starts up, it should set up the database connection and pass it through to the rest of the app the proper way, instead of using the old broken shortcut.
 
-9. TODO - think about whether due_date should really be NOT NULL or nullable.
+9. DONE - think about whether due_date should really be NOT NULL or nullable.
     Note to self: made due_date NOT NULL so every task requires a deadline, matching Task's own validation - but not 100% sure yet if I actually want to force every task to have a due date. Revisit this later and decide for real; if nullable is wanted after all, need to relax Task's validation and null-check the parse in ReadDB().
+    Decision: keeping due_date NOT NULL. Validating it once at Task's constructor/setter means every downstream method (SearchOverdue, SearchByDueDate, ReadDB's LocalDate.parse) can safely assume a non-null date instead of needing its own null-check - nullable would push that risk out to every caller instead of centralizing it.
 
 === TASK HANDLING (TaskService.java) ===
 Group note: importance - high, this is the actual task-management logic the rest of the app is built to support. Complexity - medium, four operations to flesh out, each needs its own validation/error handling on top of TaskRepo calls.
 
-10. TODO - task: implement TaskService's Create, Update, Select, and Delete methods for tasks, replacing the current empty CreateTask/TaskSearch stubs.
+10. DONE - task: implement TaskService's Create, Update, Select, and Delete methods for tasks, replacing the current empty CreateTask/TaskSearch stubs.
     Note: TaskService is meant to be the app's brain for task manipulation, but right now it has no real logic - it needs methods to create a new task, update an existing task's fields, select/find a task (e.g. by id), and delete a task, each validating input and calling into TaskRepo to persist the change.
 
 === CONSOLE UI (ConsoleUI.java) ===
