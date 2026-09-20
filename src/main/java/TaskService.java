@@ -1,6 +1,5 @@
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -100,5 +99,8 @@ public class TaskService {
         task.setPriority(newPriority);
     }
 
+    public List<Task> TaskList() {
+        return this.tasks;
+    }
 
 }
