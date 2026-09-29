@@ -18,7 +18,7 @@ public class ConsoleUI {
 //        works
 //        TODO make it into a command console controls
         StartTerminal();
-        System.out.println("--help to list commands");
+        System.out.println("help to list commands");
         while(scanner.hasNext()) {
             CommandHandler(scanner.nextLine());
         }
@@ -27,10 +27,10 @@ public class ConsoleUI {
     public void StartTerminal() throws IOException {
 //        Uncomment the one needed (maybe will be automatic in the future)
 //        Windows
-        new ProcessBuilder("cmd.exe", "/c", "cmd.exe").start();
+//        new ProcessBuilder("cmd.exe", "/c", "cmd.exe").start();
 
 //        Mac
-//        new ProcessBuilder("open", "-a", "Terminal").start();
+        new ProcessBuilder("open", "-a", "Terminal").start();
 
 //        Linux
 //        new ProcessBuilder("gnome-terminal").start();
@@ -47,8 +47,8 @@ public class ConsoleUI {
             SearchCommandHandler();
         } else if (command.toLowerCase().startsWith("tasklist")) {
             ReturnTasksCommandHandler();
-        } else if (command.toLowerCase().startsWith("--help")) {
-
+        } else if (command.toLowerCase().startsWith("help")) {
+            HelpCommandHandler();
         }
     }
 
@@ -93,6 +93,9 @@ public class ConsoleUI {
     }
 
     public void HelpCommandHandler() {
-
+        System.out.println("Add task by typing: add");
+        System.out.println("Delet task byt typing: delete");
+        System.out.println("Search tasks by typing: search");
+        System.out.println("List all tasks by typing: tasklist");
     }
 }
