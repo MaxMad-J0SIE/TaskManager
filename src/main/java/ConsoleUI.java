@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -49,6 +50,8 @@ public class ConsoleUI {
             ReturnTasksCommandHandler();
         } else if (command.toLowerCase().startsWith("help")) {
             HelpCommandHandler();
+        } else if (command.toLowerCase().startsWith("exit") || command.toLowerCase().startsWith("quit")) {
+//            to be added, exit command
         }
     }
 
@@ -67,15 +70,60 @@ public class ConsoleUI {
     }
 
     public void DeleteCommandHandler() throws SQLException {
-
+        System.out.print("Input task ID to delete: ");
+        Integer taskID = scanner.nextInt();
+        taskService.DeleteTask(taskID);
     }
 
+//    shit broke TODO fix
     public void UpdateCommandHandler() throws SQLException {
+        String tempInput = "";
+        System.out.print("Input task ID to update: ");
+        Integer taskID = scanner.nextInt();
+//        prints out task details and asks to update them or not
+        Task task = taskService.SearchById(taskID);
 
+        System.out.println("Input changes, if not leave empty");
+
+        System.out.print(task.getTitle() + " <- ");
+        if (scanner.hasNext()) {
+            tempInput = scanner.nextLine();
+            if (!tempInput.isEmpty()) {
+                task.setTitle(tempInput);
+            }
+        }
+        System.out.print(task.getDescription() + " <- ");
+        if (scanner.hasNext()) {
+            tempInput = scanner.nextLine();
+            if (!tempInput.isEmpty()) {
+                task.setDescription(tempInput);
+            }
+        }
+        System.out.print(task.getDueDate() + " <- ");
+        if (scanner.hasNext()) {
+            tempInput = scanner.nextLine();
+            if (!tempInput.isEmpty()) {
+                task.setDueDate(LocalDate.parse(tempInput));
+            }
+        }
+        System.out.print(task.getStatus() + " <- ");
+        if (scanner.hasNext()) {
+            tempInput = scanner.nextLine();
+            if (!tempInput.isEmpty()) {
+                task.setStatus(Status.valueOf(tempInput));
+            }
+        }
+        System.out.print(task.getPriority() + " <- ");
+        if (scanner.hasNext()) {
+            tempInput = scanner.nextLine();
+            if (!tempInput.isEmpty()) {
+                task.setPriority(Priority.valueOf(tempInput));
+            }
+        }
     }
 
     public void SearchCommandHandler() throws SQLException {
-
+//        asks which search to use / allows the user to input data by which to search and distinguishes by itself
     }
 
     public void ReturnTasksCommandHandler() {
@@ -94,7 +142,8 @@ public class ConsoleUI {
 
     public void HelpCommandHandler() {
         System.out.println("Add task by typing: add");
-        System.out.println("Delet task byt typing: delete");
+        System.out.println("Delete task byt typing: delete");
+        System.out.println("Update tasks by typing: update");
         System.out.println("Search tasks by typing: search");
         System.out.println("List all tasks by typing: tasklist");
     }

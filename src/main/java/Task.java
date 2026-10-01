@@ -84,4 +84,8 @@ public class Task {
         }
         this.priority = priority;
     }
+
+    public String getPro() {
+        return null;
+    }
 }
