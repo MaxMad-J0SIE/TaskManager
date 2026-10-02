@@ -88,6 +88,20 @@ public class TaskRepo {
         throw new SQLException("Insert failed, no id generated for task: " + title);
     }
 
+    public void UpdateTaskDB(Task task) throws SQLException {
+        String sqlUpdate = "UPDATE tasks SET title = ?, description = ?, due_date = ?, status = ?, priority = ? WHERE id = ?";
+
+        try (PreparedStatement updateStmt = dbConn.prepareStatement(sqlUpdate)) {
+            updateStmt.setString(1, task.getTitle());
+            updateStmt.setString(2, task.getDescription());
+            updateStmt.setString(3, task.getDueDate().toString());
+            updateStmt.setString(4, task.getStatus().name());
+            updateStmt.setString(5, task.getPriority().name());
+            updateStmt.setInt(6, task.getId());
+            updateStmt.executeUpdate();
+        }
+    }
+
     public void DeleteTaskDB(Integer id) throws SQLException {
         String sqlDelete = "DELETE FROM tasks WHERE id = ?";
 

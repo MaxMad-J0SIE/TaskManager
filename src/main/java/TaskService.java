@@ -1,5 +1,6 @@
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -7,7 +8,6 @@ public class TaskService {
 //    program brains
 //    in charge of checking if tasks are correctly labeled
 //    error/exception handling
-//    TODO when creating a task check if the date is in the past (exception)
 
     private final TaskRepo repository;
     private final List<Task> tasks;
@@ -21,9 +21,15 @@ public class TaskService {
     public void CreateTask(String title, String description, String dueDate, String priority ) throws SQLException {
 //        create a task without id and pass it to DB
 //        get id from db
-        LocalDate dueDate1 = LocalDate.parse(dueDate);
+//        validate before inserting so a bad input never reaches the DB
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Title cannot be empty");
+        }
+        title = title.trim();
+        description = description == null ? "" : description.trim();
+        LocalDate dueDate1 = ParseDate(dueDate);
         Status status = Status.TODO;
-        Priority priority1 = Priority.valueOf(priority);
+        Priority priority1 = ParsePriority(priority);
         Integer id = repository.NewTaskSaveDB(title, description, dueDate1, status, priority1);
         Task task = new Task(id, title, dueDate1, priority1);
         task.setDescription(description);
@@ -49,8 +55,10 @@ public class TaskService {
         return tasks.stream().filter(task -> task.getTitle().toLowerCase().contains(needle) || task.getDescription().toLowerCase().contains(needle)).toList();
     }
 
-    public List<Task> SearchByDueDate(LocalDate dueDate) {
-        return tasks.stream().filter(task -> task.getDueDate().isEqual(dueDate)).toList();
+    public List<Task> SearchByDueDate(String dueDate) {
+//        past dates are allowed here, you can search for old deadlines
+        LocalDate wanted = ParseDateFormat(dueDate);
+        return tasks.stream().filter(task -> task.getDueDate().isEqual(wanted)).toList();
     }
 
     public List<Task> SearchOverdue() {
@@ -59,11 +67,13 @@ public class TaskService {
     }
 
     public List<Task> SearchByStatus(String status) {
-        return tasks.stream().filter(task -> task.getStatus() == Status.valueOf(status)).toList();
+        Status wanted = ParseStatus(status);
+        return tasks.stream().filter(task -> task.getStatus() == wanted).toList();
     }
 
     public List<Task> SearchByPriority(String priority) {
-        return tasks.stream().filter(task -> task.getPriority() == Priority.valueOf(priority)).toList();
+        Priority wanted = ParsePriority(priority);
+        return tasks.stream().filter(task -> task.getPriority() == wanted).toList();
     }
 
 //    Task Delete
@@ -74,33 +84,62 @@ public class TaskService {
     }
 
 //    Task Update
-    public void UpdateTitle(Integer id, String newTitle) {
+//    blank input keeps the current value
+    public void UpdateTask(int id, String title, String description, String dueDate, String status, String priority) throws SQLException {
         Task task = SearchById(id);
-        task.setTitle(newTitle);
-    }
+//        parse everything first so bad input doesn't leave the task half updated
+        LocalDate newDueDate = dueDate.isBlank() ? task.getDueDate() : ParseDate(dueDate);
+        Status newStatus = status.isBlank() ? task.getStatus() : ParseStatus(status);
+        Priority newPriority = priority.isBlank() ? task.getPriority() : ParsePriority(priority);
 
-    public void UpdateDescription(Integer id, String newDescription) {
-        Task task = SearchById(id);
-        task.setDescription(newDescription);
-    }
-
-    public void UpdateDeadline(Integer id, LocalDate newDeadline) {
-        Task task = SearchById(id);
-        task.setDueDate(newDeadline);
-    }
-
-    public void UpdateStatus(Integer id, Status newStatus) {
-        Task task = SearchById(id);
+        if (!title.isBlank()) {
+            task.setTitle(title.trim());
+        }
+        if (!description.isBlank()) {
+            task.setDescription(description);
+        }
+        task.setDueDate(newDueDate);
         task.setStatus(newStatus);
-    }
-
-    public void UpdatePriority(Integer id, Priority newPriority) {
-        Task task = SearchById(id);
         task.setPriority(newPriority);
+
+        repository.UpdateTaskDB(task);
     }
 
     public List<Task> TaskList() {
         return this.tasks;
+    }
+
+//    Input parsing/validation (shared by create, update and search)
+    private LocalDate ParseDate(String input) {
+        LocalDate date = ParseDateFormat(input);
+        if (date.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Deadline cannot be in the past");
+        }
+        return date;
+    }
+
+    private LocalDate ParseDateFormat(String input) {
+        try {
+            return LocalDate.parse(input.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Date must be in format YYYY-MM-DD");
+        }
+    }
+
+    private Status ParseStatus(String input) {
+        try {
+            return Status.valueOf(input.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Status must be TODO, IN_PROGRESS or DONE");
+        }
+    }
+
+    private Priority ParsePriority(String input) {
+        try {
+            return Priority.valueOf(input.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Priority must be LOW, MEDIUM or HIGH");
+        }
     }
 
 }

@@ -5,15 +5,17 @@ import java.util.Scanner;
 
 class Main {
     static void main() throws SQLException, IOException {
-        Connection conn = Database.connect();
-        Database.Create_DB(conn);
+//        try-with-resources closes the DB connection when the user exits
+        try (Connection conn = Database.connect()) {
+            Database.Create_DB(conn);
 
-        TaskRepo repository = new TaskRepo(conn);
+            TaskRepo repository = new TaskRepo(conn);
 
-        TaskService taskService = new TaskService(repository);
+            TaskService taskService = new TaskService(repository);
 
-        Scanner scanner = new Scanner(System.in);
-        ConsoleUI cli = new ConsoleUI(taskService, scanner);
-        cli.ScanSystemIn();
+            Scanner scanner = new Scanner(System.in);
+            ConsoleUI cli = new ConsoleUI(taskService, scanner);
+            cli.ScanSystemIn();
+        }
     }
 }
